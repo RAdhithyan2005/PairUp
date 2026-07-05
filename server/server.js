@@ -7,6 +7,7 @@ const cors = require('cors');
 
 const authRoutes = require('./routes/auth');
 const roomRoutes = require('./routes/rooms');
+const executeRoutes = require('./routes/execute');
 
 const app = express();
 const server = http.createServer(app);
@@ -26,6 +27,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/rooms', roomRoutes);
+app.use('/api/execute', executeRoutes);
 
 // --- Socket.io real-time logic ---
 io.on('connection', (socket) => {
