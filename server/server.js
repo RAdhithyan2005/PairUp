@@ -42,11 +42,18 @@ io.on('connection', (socket) => {
     // Broadcast to everyone in the room except the sender
     socket.to(roomId).emit('code-update', code);
   });
+  socket.on('chat-message', ({ roomId, message, sender }) => {
+    socket.to(roomId).emit('chat-message', { message, sender });
+  });
 
   socket.on('disconnect', () => {
     console.log('Socket disconnected:', socket.id);
   });
+  socket.on('timer-update', ({ roomId, secondsLeft, timerRunning }) => {
+    socket.to(roomId).emit('timer-update', { secondsLeft, timerRunning });
+  });
 });
+
 
 const PORT = process.env.PORT || 5000;
 
