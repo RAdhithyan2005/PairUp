@@ -22,6 +22,18 @@ router.post('/create', requireAuth, async (req, res) => {
     res.status(500).json({ message: 'Server error creating room' });
   }
 });
+// GET /api/rooms/my/history — rooms the current user has participated in
+router.get('/my/history', requireAuth, async (req, res) => {
+  try {
+    const rooms = await Room.find({ participants: req.userId })
+      .sort({ updatedAt: -1 })
+      .limit(10);
+    res.json(rooms);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error fetching history' });
+  }
+});
 
 // GET /api/rooms/:roomId — fetch a room, add current user as a participant if not already
 router.get('/:roomId', requireAuth, async (req, res) => {

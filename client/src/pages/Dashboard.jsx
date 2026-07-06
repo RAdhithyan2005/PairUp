@@ -1,11 +1,20 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { createRoom } from '../api/rooms.js';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { createRoom, getRoomHistory } from '../api/rooms.js';
 
 function Dashboard() {
   const [joinRoomId, setJoinRoomId] = useState('');
   const [error, setError] = useState('');
+  const [history, setHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    getRoomHistory()
+      .then((res) => setHistory(res.data))
+      .catch(() => setHistory([]))
+      .finally(() => setLoadingHistory(false));
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -51,6 +60,27 @@ function Dashboard() {
       </form>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
+
+      <div style={{ marginBottom: 24 }}>
+        <h4>Recent rooms</h4>
+        {loadingHistory ? (
+          <p style={{ color: '#888' }}>Loading...</p>
+        ) : history.length === 0 ? (
+          <p style={{ color: '#888' }}>No rooms yet — create one above to get started.</p>
+        ) : (
+          <ul style={{ paddingLeft: 20 }}>
+            {history.map((room) => (
+              <li key={room._id} style={{ marginBottom: 6 }}>
+                <Link to={`/room/${room.roomId}`}>{room.roomId}</Link>
+                {' — '}
+                <span style={{ color: '#888', fontSize: 13 }}>
+                  {room.participants.length} participant(s)
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       <button onClick={handleLogout} style={{ padding: 10 }}>
         Log out
