@@ -33,10 +33,16 @@ function RoomPage() {
 
   const [secondsLeft, setSecondsLeft] = useState(45 * 60); // default 45 min
   const [timerRunning, setTimerRunning] = useState(false);
+  const [liveParticipants, setLiveParticipants] = useState(1);
 
   useEffect(() => {
     getRoom(roomId)
-      .then((res) => setRoom(res.data))
+      .then((res) => {
+        setRoom(res.data);
+        if (res.data.code) {
+          setCode(res.data.code);
+        }
+      })
       .catch((err) => setError(err.response?.data?.message || 'Room not found'));
   }, [roomId]);
 
@@ -59,11 +65,16 @@ function RoomPage() {
       setTimerRunning(remoteRunning);
     });
 
+    socket.on('participant-count', (count) => {
+      setLiveParticipants(count);
+    });
+
     return () => {
       socket.off('code-update');
       socket.off('chat-message');
       socket.disconnect();
       socket.off('timer-update');
+      socket.off('participant-count');
     };
   }, [roomId]);
 
@@ -146,7 +157,7 @@ function RoomPage() {
     <div style={{ maxWidth: 1100, margin: '40px auto', fontFamily: 'sans-serif', display: 'flex', gap: 20 }}>
       <div style={{ flex: 2 }}>
         <h2>Room: {room.roomId}</h2>
-        <p>Participants: {room.participants.length}</p>
+        <p>Participants: {liveParticipants}</p>
 
         <div style={{ marginBottom: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
           <select value={language} onChange={(e) => setLanguage(e.target.value)}>

@@ -18,6 +18,10 @@ const roomSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
+    code: {
+      type: String,
+      default: '// start typing...',
+    },
   },
   { timestamps: true }
 );
