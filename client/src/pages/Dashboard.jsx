@@ -39,52 +39,56 @@ function Dashboard() {
   };
 
   return (
-    <div style={{ maxWidth: 500, margin: '80px auto', fontFamily: 'sans-serif' }}>
-      <h2>Dashboard</h2>
+    <div className="dashboard-shell">
+      <div className="dashboard-inner">
+        <div className="eyebrow">
+          <span className="cursor-blink" />
+          PairUp
+        </div>
+        <h2 style={{ marginBottom: 24 }}>Dashboard</h2>
 
-      <button onClick={handleCreateRoom} style={{ padding: 10, marginBottom: 24 }}>
-        + Create new room
-      </button>
-
-      <form onSubmit={handleJoinRoom} style={{ marginBottom: 24 }}>
-        <input
-          type="text"
-          placeholder="Enter room ID to join"
-          value={joinRoomId}
-          onChange={(e) => setJoinRoomId(e.target.value)}
-          style={{ padding: 8, width: '70%', marginRight: 8 }}
-        />
-        <button type="submit" style={{ padding: 8 }}>
-          Join
+        <button onClick={handleCreateRoom} className="btn-primary" style={{ marginBottom: 20 }}>
+          + Create new room
         </button>
-      </form>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+        <form onSubmit={handleJoinRoom} style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+          <input
+            type="text"
+            placeholder="Enter room ID to join"
+            value={joinRoomId}
+            onChange={(e) => setJoinRoomId(e.target.value)}
+          />
+          <button type="submit" className="btn-secondary">
+            Join
+          </button>
+        </form>
 
-      <div style={{ marginBottom: 24 }}>
-        <h4>Recent rooms</h4>
-        {loadingHistory ? (
-          <p style={{ color: '#888' }}>Loading...</p>
-        ) : history.length === 0 ? (
-          <p style={{ color: '#888' }}>No rooms yet — create one above to get started.</p>
-        ) : (
-          <ul style={{ paddingLeft: 20 }}>
-            {history.map((room) => (
-              <li key={room._id} style={{ marginBottom: 6 }}>
-                <Link to={`/room/${room.roomId}`}>{room.roomId}</Link>
-                {' — '}
-                <span style={{ color: '#888', fontSize: 13 }}>
-                  {room.participants.length} participant(s)
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+        {error && <p className="error-text">{error}</p>}
+
+        <div className="panel" style={{ marginBottom: 24 }}>
+          <h4>Recent rooms</h4>
+          {loadingHistory ? (
+            <p className="text-muted">Loading...</p>
+          ) : history.length === 0 ? (
+            <p className="text-muted">No rooms yet — create one above to get started.</p>
+          ) : (
+            <ul className="room-list">
+              {history.map((room) => (
+                <li key={room._id}>
+                  <Link to={`/room/${room.roomId}`} className="mono">
+                    {room.roomId}
+                  </Link>
+                  <span className="text-muted">{room.participants.length} participant(s)</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <button onClick={handleLogout} className="btn-danger">
+          Log out
+        </button>
       </div>
-
-      <button onClick={handleLogout} style={{ padding: 10 }}>
-        Log out
-      </button>
     </div>
   );
 }

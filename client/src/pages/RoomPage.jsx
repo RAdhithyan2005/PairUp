@@ -153,95 +153,81 @@ function RoomPage() {
     return <p style={{ textAlign: 'center', marginTop: 80 }}>Loading room...</p>;
   }
 
-  return (
-    <div style={{ maxWidth: 1100, margin: '40px auto', fontFamily: 'sans-serif', display: 'flex', gap: 20 }}>
-      <div style={{ flex: 2 }}>
-        <h2>Room: {room.roomId}</h2>
-        <p>Participants: {liveParticipants}</p>
-
-        <div style={{ marginBottom: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
-          <select value={language} onChange={(e) => setLanguage(e.target.value)}>
-            {LANGUAGES.map((l) => (
-              <option key={l.value} value={l.value}>
-                {l.label}
-              </option>
-            ))}
-          </select>
-          <button onClick={handleRun} disabled={running} style={{ padding: '6px 16px' }}>
-            {running ? 'Running...' : 'Run'}
-          </button>
-        </div>
-
-        <Editor
-          height="400px"
-          language={language}
-          value={code}
-          onChange={handleEditorChange}
-          theme="vs-dark"
-        />
-
-        <div style={{ marginTop: 16 }}>
-          <h4>Output</h4>
-          <pre
-            style={{
-              background: '#1e1e1e',
-              color: '#fff',
-              padding: 12,
-              minHeight: 60,
-              whiteSpace: 'pre-wrap',
-            }}
-          >
-            {output}
-          </pre>
-        </div>
-      </div>
-
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ border: '1px solid #ccc', borderRadius: 6, padding: 12, marginBottom: 16, textAlign: 'center' }}>
-          <h4 style={{ marginTop: 0 }}>Timer</h4>
-          <div style={{ fontSize: 28, fontFamily: 'monospace', marginBottom: 8 }}>
-            {formatTime(secondsLeft)}
+return (
+    <div className="room-shell">
+      <div className="room-inner">
+        <div className="editor-column">
+          <div className="eyebrow">
+            <span className="cursor-blink" />
+            Room <span className="mono">{room.roomId}</span>
           </div>
-          <button onClick={handleStartPauseTimer} style={{ marginRight: 8, padding: '4px 12px' }}>
-            {timerRunning ? 'Pause' : 'Start'}
-          </button>
-          <button onClick={handleResetTimer} style={{ padding: '4px 12px' }}>
-            Reset
-          </button>
-        </div>
+          <p className="text-muted" style={{ marginBottom: 16 }}>
+            {liveParticipants} participant{liveParticipants !== 1 ? 's' : ''} online
+          </p>
 
-        <div style={{ border: '1px solid #ccc', borderRadius: 6, padding: 12, flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <h4 style={{ marginTop: 0 }}>Chat</h4>
-          <div style={{ flex: 1, overflowY: 'auto', maxHeight: 300, marginBottom: 8 }}>
-            {messages.map((m, i) => (
-              <div key={i} style={{ marginBottom: 6, textAlign: m.self ? 'right' : 'left' }}>
-                <span
-                  style={{
-                    display: 'inline-block',
-                    background: m.self ? '#DCF8C6' : '#f1f0f0',
-                    padding: '4px 10px',
-                    borderRadius: 12,
-                    fontSize: 14,
-                  }}
-                >
-                  {m.message}
-                </span>
-              </div>
-            ))}
-            <div ref={chatEndRef} />
-          </div>
-          <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: 6 }}>
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder="Type a message..."
-              style={{ flex: 1, padding: 6 }}
-            />
-            <button type="submit" style={{ padding: '6px 12px' }}>
-              Send
+          <div style={{ marginBottom: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
+            <select value={language} onChange={(e) => setLanguage(e.target.value)} style={{ width: 'auto' }}>
+              {LANGUAGES.map((l) => (
+                <option key={l.value} value={l.value}>
+                  {l.label}
+                </option>
+              ))}
+            </select>
+            <button onClick={handleRun} disabled={running} className="btn-primary">
+              {running ? 'Running...' : 'Run'}
             </button>
-          </form>
+          </div>
+
+          <Editor
+            height="420px"
+            language={language}
+            value={code}
+            onChange={handleEditorChange}
+            theme="vs-dark"
+          />
+
+          <div style={{ marginTop: 16 }}>
+            <h4 style={{ fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+              Output
+            </h4>
+            <pre className="output-console">{output}</pre>
+          </div>
+        </div>
+
+        <div className="side-column">
+          <div className="panel" style={{ textAlign: 'center' }}>
+            <h4>Timer</h4>
+            <div className="timer-display">{formatTime(secondsLeft)}</div>
+            <button onClick={handleStartPauseTimer} className="btn-primary" style={{ marginRight: 8 }}>
+              {timerRunning ? 'Pause' : 'Start'}
+            </button>
+            <button onClick={handleResetTimer} className="btn-secondary">
+              Reset
+            </button>
+          </div>
+
+          <div className="panel" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <h4>Chat</h4>
+            <div className="chat-messages">
+              {messages.map((m, i) => (
+                <div key={i} className={`chat-bubble ${m.self ? 'self' : 'peer'}`}>
+                  {m.message}
+                </div>
+              ))}
+              <div ref={chatEndRef} />
+            </div>
+            <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: 6 }}>
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Type a message..."
+              />
+              <button type="submit" className="btn-secondary">
+                Send
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>
