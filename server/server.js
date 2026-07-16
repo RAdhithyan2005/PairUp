@@ -57,6 +57,10 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('chat-message', { message, sender });
   });
 
+  socket.on('timer-set', ({ roomId, seconds }) => {
+    socket.to(roomId).emit('timer-set', { seconds });
+  });
+
   
   socket.on('timer-update', ({ roomId, secondsLeft, timerRunning }) => {
     socket.to(roomId).emit('timer-update', { secondsLeft, timerRunning });

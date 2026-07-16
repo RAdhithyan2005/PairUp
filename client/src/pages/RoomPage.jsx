@@ -5,6 +5,17 @@ import { getRoom } from '../api/rooms.js';
 import { runCode } from '../api/execute.js';
 import socket from '../api/socket.js';
 
+function getUserIdFromToken() {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.userId;
+  } catch {
+    return null;
+  }
+}
+
 const LANGUAGES = [
   { label: 'JavaScript', value: 'javascript' },
   { label: 'Python', value: 'python' },
@@ -24,6 +35,10 @@ function RoomPage() {
   const [language, setLanguage] = useState('javascript');
   const [output, setOutput] = useState('');
   const [running, setRunning] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [isHost, setIsHost] = useState(false);
+  const [showTimerSettings, setShowTimerSettings] = useState(false);
+  const [customMinutes, setCustomMinutes] = useState(45);
   const isRemoteChange = useRef(false);
   const isRemoteTimerChange = useRef(false); 
 
@@ -42,9 +57,12 @@ function RoomPage() {
         if (res.data.code) {
           setCode(res.data.code);
         }
+        const currentUserId = getUserIdFromToken();
+        setIsHost(res.data.host?.toString() === currentUserId);
       })
       .catch((err) => setError(err.response?.data?.message || 'Room not found'));
   }, [roomId]);
+
 
   useEffect(() => {
     socket.connect();
@@ -65,6 +83,11 @@ function RoomPage() {
       setTimerRunning(remoteRunning);
     });
 
+    socket.on('timer-set', ({ seconds }) => {
+      setSecondsLeft(seconds);
+      setTimerRunning(false);
+    });
+
     socket.on('participant-count', (count) => {
       setLiveParticipants(count);
     });
@@ -75,6 +98,7 @@ function RoomPage() {
       socket.disconnect();
       socket.off('timer-update');
       socket.off('participant-count');
+      socket.off('timer-set');
     };
   }, [roomId]);
 
@@ -157,9 +181,27 @@ return (
     <div className="room-shell">
       <div className="room-inner">
         <div className="editor-column">
-          <div className="eyebrow">
+          <div className="eyebrow" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span className="cursor-blink" />
             Room <span className="mono">{room.roomId}</span>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(room.roomId);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              title="Copy room ID"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '2px 6px',
+                fontSize: 14,
+                color: copied ? 'var(--accent-mint)' : 'var(--text-muted)',
+              }}
+            >
+              {copied ? '✓ Copied' : '⧉'}
+            </button>
           </div>
           <p className="text-muted" style={{ marginBottom: 16 }}>
             {liveParticipants} participant{liveParticipants !== 1 ? 's' : ''} online
@@ -198,35 +240,70 @@ return (
           <div className="panel" style={{ textAlign: 'center' }}>
             <h4>Timer</h4>
             <div className="timer-display">{formatTime(secondsLeft)}</div>
-            <button onClick={handleStartPauseTimer} className="btn-primary" style={{ marginRight: 8 }}>
-              {timerRunning ? 'Pause' : 'Start'}
-            </button>
-            <button onClick={handleResetTimer} className="btn-secondary">
-              Reset
-            </button>
-          </div>
-
-          <div className="panel" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <h4>Chat</h4>
-            <div className="chat-messages">
-              {messages.map((m, i) => (
-                <div key={i} className={`chat-bubble ${m.self ? 'self' : 'peer'}`}>
-                  {m.message}
-                </div>
-              ))}
-              <div ref={chatEndRef} />
-            </div>
-            <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: 6 }}>
-              <input
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Type a message..."
-              />
-              <button type="submit" className="btn-secondary">
-                Send
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
+              <button onClick={handleStartPauseTimer} className="btn-primary">
+                {timerRunning ? 'Pause' : 'Start'}
               </button>
-            </form>
+              <button onClick={handleResetTimer} className="btn-secondary">
+                Reset
+              </button>
+              {isHost && (
+                <button
+                  onClick={() => setShowTimerSettings((s) => !s)}
+                  className="btn-secondary"
+                  title="Timer settings"
+                >
+                  ⚙
+                </button>
+              )}
+            </div>
+            {isHost && showTimerSettings && (
+              <div style={{ marginTop: 8, padding: '10px', background: 'var(--bg-panel-raised)', borderRadius: 8 }}>
+                <p style={{ margin: '0 0 6px', fontSize: 13, color: 'var(--text-muted)' }}>
+                  Set timer (minutes)
+                </p>
+                <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                  <input
+                    type="number"
+                    min="1"
+                    max="180"
+                    value={customMinutes}
+                    onChange={(e) => setCustomMinutes(Number(e.target.value))}
+                    style={{ width: 70, textAlign: 'center' }}
+                  />
+                  <button
+                    className="btn-primary"
+                    onClick={() => {
+                      const seconds = customMinutes * 60;
+                      setSecondsLeft(seconds);
+                      setTimerRunning(false);
+                      socket.emit('timer-set', { roomId, seconds });
+                      setShowTimerSettings(false);
+                    }}
+                  >
+                    Set
+                  </button>
+                </div>
+                <div style={{ marginTop: 8, display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+                  {[15, 30, 45, 60, 90].map((min) => (
+                    <button
+                      key={min}
+                      className="btn-secondary"
+                      style={{ padding: '4px 10px', fontSize: 12 }}
+                      onClick={() => {
+                        const seconds = min * 60;
+                        setSecondsLeft(seconds);
+                        setTimerRunning(false);
+                        socket.emit('timer-set', { roomId, seconds });
+                        setShowTimerSettings(false);
+                      }}
+                    >
+                      {min}m
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
